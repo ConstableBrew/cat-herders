@@ -26,20 +26,25 @@ export default class Canvas {
         this.cvs.height = opts.height;
         this.cvs.style.width = '100%';
         this.cvs.style.height = '100%';
-        this.ctx = cvs.getContext('2d');
+        this.ctx = this.cvs.getContext('2d');
         this.renderers = [...opts.renderers];
 
         this.render();
-        parent.appendChild(this.cvs);
+        opts.parent.appendChild(this.cvs);
 
         Canvas.instance = this;
     }
 
-    render() {
+    addRenderer(renderer){
+        if (typeof renderer === 'function') this.renderers.push(renderer);
+    }
+
+    render(renderers) {
         this.ctx.fillStyle = 'rgba(0,0,0,0)';
         this.ctx.clearRect(0, 0, this.cvs.width, this.cvs.height);
         this.ctx.imageSmoothingEnabled = false;
         
         this.renderers.forEach( func => func(this.ctx) );
+        Array.isArray(renderers) && renderers.forEach( func => func(this.ctx) );
     }
 }

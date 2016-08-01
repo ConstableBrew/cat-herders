@@ -1,4 +1,4 @@
-export class Point {
+export default class Point {
 	constructor(x = 0, y = 0) {
 		if (x instanceof Point) return new Point(x.x, x.y); // Clone a given Point
 		if (!(this instanceof Point)) return new Point(x, y);

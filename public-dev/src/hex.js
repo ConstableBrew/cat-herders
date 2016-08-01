@@ -1,5 +1,7 @@
 import Point from './point';
 
+const rad2deg = Math.PI / 180;
+
 export default class Hex {
     constructor(q = 0, r = 0) {
         if (q instanceof Hex) return new Hex(q.q, q.r); // Clone a given hex
@@ -11,7 +13,7 @@ export default class Hex {
      * Returns the coordinate string of the given hex
      **/
     static coords(hex) {
-        return `${q},${r}`
+        return `${hex.q},${hex.r}`
     }
 
     coords() {
@@ -48,7 +50,7 @@ export default class Hex {
      * Returns coordinates of all neighboring hexes out to the given distance.
      **/
     static neighborhood(hex, distance) {
-        let hex = hex instanceof Object ? hex : {};
+        hex = hex instanceof Object ? hex : {};
         let q = hex.q | 0;
         let r = hex.r | 0;
         let d = distance | 0;
@@ -65,9 +67,6 @@ export default class Hex {
     neighborhood(distance) {
         return Hex.neighborhood(this, distance);
     }
-
-    satic const rad2deg = Math.PI / 180;
-    
 
     /**
      * Calculates the manhattan distance between two given hexes
@@ -89,24 +88,32 @@ export default class Hex {
      * Helper function to return the point of the given corner
      **/
     static corner(center, size, i) {
-        let angleDeg = 60 * (i|0) + 30;
-        let angleRad = Hex.rad2deg * angleDeg;
+        let angleDeg = 60 * (i|0); // Flat top
+        //let angleDeg = 60 * (i|0) + 30; // Pointy top
+        let angleRad = rad2deg * angleDeg;
         return new Point(
-            center.x + size * Math.cos(angleRad),
-            center.y + size * sin(angleRad)
+            center.x + size / 2 * Math.cos(angleRad),
+            center.y + size / 2 * Math.sin(angleRad)
         );
     }
 
-    static render(ctx, center, size) {
+    static render(hex, center, size, ctx) {
         let p = Hex.corner(center, size, 0);
+        ctx.beginPath();
+        ctx.fillStyle = hex.fillStyle || 'rgba(255,0,0,0.25)';
+        ctx.strokeStyle = hex.strokeStyle || 'rgba(255,0,0,0.5)';
+        ctx.lineWidth = hex.lineWidth || 0.025 * size;
         ctx.moveTo(p.x, p.y);
         for (let i = 1; i < 6; ++i) {
             p = Hex.corner(center, size, i);
             ctx.lineTo(p.x, p.y);
         }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
     }
 
-    render(ctx, center, size) {
-        return Hex.render(ctx, center, size);
+    render(center, size, ctx) {
+        return Hex.render(this, center, size, ctx);
     }
 }
