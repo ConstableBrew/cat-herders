@@ -1,6 +1,10 @@
 import Hex from './hex';
 import Point from './point';
 
+const sqrt3 = 1.7320508075688772;
+const sqrt3_2 = sqrt3/2;
+const sqrt3_3 = sqrt3/3;
+
 export default class HexMap {
     constructor(radius) {
         // Build a hex-shaped map filled with Hex objects
@@ -12,7 +16,6 @@ export default class HexMap {
                 counter++;
             }
         }
-        console.log(counter)
     }
 
     static forEach(hexMap, func) {
@@ -30,28 +33,25 @@ export default class HexMap {
     }
 
     static render(hexMap, center, size, ctx) {
-         // Flat top hexes
-        const width = size;
-        const height = width * 0.8660254037844386; // sqrt(3)/2
-        const horiz = width * 0.75;
-        const vert = height;
-        // // Pointy top hexes
-        // const height = size;
-        // const width = height * 0.8660254037844386; // sqrt(3)/2
-        // const vert = height * 0.75;
-        // const horiz = width;
-        const halfVert = vert * 0.5;
-
         hexMap.forEach( hex => {
-            let c = new Point(center.x + hex.q * horiz , center.y + hex.r * vert + halfVert * hex.q);
-            hex.render(c, size, ctx);
-            ctx.fillStyle = '#eee';
-            ctx.font = '1rem sans-serif';
-            ctx.fillText(hex.coords(), c.x - ctx.measureText(hex.coords()).width / 2, c.y + 5);
+            hex.render(center, size, ctx);
         });
     }
 
     render(center, size, ctx) {
         return HexMap.render(this, center, size, ctx);
+    }
+
+    static pixelToHex(center, size, x, y) {
+        size = size / 2;
+
+        // Flat top hexes
+        let q = (x - center.x) * 0.6666666666666666 / size;
+        let r = (-(x - center.x) / 3 + sqrt3_3 * (y - center.y)) / size;
+        return Hex.coords(Math.round(q, 0), Math.round(r, 0));
+    }
+
+    pixelToHex(center, size, x, y) {
+        return this[HexMap.pixelToHex(center, size, x, y)];
     }
 }

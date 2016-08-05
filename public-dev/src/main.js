@@ -1,28 +1,50 @@
-import Hex from './hex';
-import HexMap from './hex-map';
-import Canvas from './canvas';
-import Point from './point';
+import reducer from './reducer';
+import { createStore } from 'redux';
 
-const mapSize = 5;
+let store = createStore(reducer);
 
-let centerHex = new Hex();
-let map = new HexMap(mapSize);
-map.forEach( hex => {
-	if(hex.distance(centerHex) === 5) {
-		hex.strokeStyle = '#aaa';
-		hex.fillStyle = '#784315';
-	} else {
-		hex.strokeStyle = '#aaa';
-		hex.fillStyle = '#6c9023';
-	}
-})
-let canvas = new Canvas();
+store.dispatch({type: 'init', mapSize: 5});
+store.subscribe( () => window.requestAnimationFrame(render));
+
+document.body.addEventListener('mousemove', event => {
+	store.dispatch({type: 'touchmove', x: event.clientX, y: event.clientY});
+});
+document.body.addEventListener('mousedown', event => {
+	store.dispatch({type: 'touchstart', x: event.clientX, y: event.clientY});
+});
+document.body.addEventListener('mouseup', event => {
+	store.dispatch({type: 'touchend', x: event.clientX, y: event.clientY});
+});
+document.body.addEventListener('touchmove', event => {
+	store.dispatch({type: 'touchmove', x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY});
+});
+document.body.addEventListener('touchstart', event => {
+	store.dispatch({type: 'touchstart', x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY});
+});
+document.body.addEventListener('touchend', event => {
+	store.dispatch({type: 'touchend', x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY});
+});
+window.onresize = event => {
+	store.dispatch({type: 'resize'});
+};
 
 function render() {
-	canvas.render();
-	let center = new Point(canvas.cvs.width / 2, canvas.cvs.height / 2);
-	let size = Math.min(canvas.cvs.width, canvas.cvs.height) / mapSize / 2;
-	map.render(center, size, canvas.ctx);
+	let state = store.getState();
+	state.canvas.render();
+
+	state.map.render(state.center, state.hexDimensions, state.canvas.ctx);
+	if(state.touching) {
+		let fillStyle = state.touching.fillStyle;
+		let label = state.touching.label;
+		
+		state.touching.label = state.touching.coords();
+		state.touching.fillStyle = 'rgba(255,0,0,0.25)';
+		state.touching.render(state.center, state.hexDimensions, state.canvas.ctx);
+		
+		state.touching.label = label;
+		state.touching.fillStyle = fillStyle;
+	}
 }
 
-setTimeout(render,0);
+
+window.requestAnimationFrame(render);

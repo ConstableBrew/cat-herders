@@ -1,6 +1,8 @@
 import Point from './point';
 
 const rad2deg = Math.PI / 180;
+const sqrt3 = 1.7320508075688772;
+const sqrt3_2 = sqrt3/2;
 
 export default class Hex {
     constructor(q = 0, r = 0) {
@@ -10,10 +12,12 @@ export default class Hex {
     }
 
     /**
-     * Returns the coordinate string of the given hex
+     * Returns the standardized coordinate string of the given hex or coordinates
      **/
-    static coords(hex) {
-        return `${hex.q},${hex.r}`
+    static coords(q, r) {
+        if (q instanceof Hex)
+            return `${q.q},${q.r}`;
+        return `${q},${r}`;
     }
 
     coords() {
@@ -87,9 +91,8 @@ export default class Hex {
     /**
      * Helper function to return the point of the given corner
      **/
-    static corner(center, size, i) {
-        let angleDeg = 60 * (i|0); // Flat top
-        //let angleDeg = 60 * (i|0) + 30; // Pointy top
+    static corner(center, size, i, flatTop = true) {
+        let angleDeg = 60 * (i|0) + (flatTop ? 0 : 30);
         let angleRad = rad2deg * angleDeg;
         return new Point(
             center.x + size / 2 * Math.cos(angleRad),
@@ -97,23 +100,59 @@ export default class Hex {
         );
     }
 
-    static render(hex, center, size, ctx) {
-        let p = Hex.corner(center, size, 0);
+    static render(hex, mapCenter, size, ctx) {
+        let hexCenter = new Point(mapCenter.x + hex.q * size.horiz , mapCenter.y + hex.r * size.vert + size.vert/2 * hex.q);
+        let p = Hex.corner(hexCenter, size.size, 0);
         ctx.beginPath();
         ctx.fillStyle = hex.fillStyle || 'rgba(255,0,0,0.25)';
         ctx.strokeStyle = hex.strokeStyle || 'rgba(255,0,0,0.5)';
-        ctx.lineWidth = hex.lineWidth || 0.025 * size;
+        ctx.lineWidth = hex.lineWidth || 0.025 * size.size;
         ctx.moveTo(p.x, p.y);
         for (let i = 1; i < 6; ++i) {
-            p = Hex.corner(center, size, i);
+            p = Hex.corner(hexCenter, size.size, i);
             ctx.lineTo(p.x, p.y);
         }
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
+
+        // Draw cell label
+        let text = hex.label;
+        if (text) {
+            let px = 20;
+            ctx.fillStyle = '#eee';
+            ctx.font = px + 'px serif';
+            px = (px * 0.60 * size.size / ctx.measureText(text).width);
+            ctx.font = px + 'px serif';
+            ctx.fillText(text, hexCenter.x - ctx.measureText(text).width / 2, hexCenter.y + 5); 
+        }
     }
 
-    render(center, size, ctx) {
-        return Hex.render(this, center, size, ctx);
+    render(mapCenter, size, ctx) {
+        return Hex.render(this, mapCenter, size, ctx);
+    }
+
+    static getDimensions(size, flatTop = true) {
+        var width, height, horiz, vert;
+
+        if (flatTop) {
+            width = size;
+            height = width * sqrt3_2;
+            horiz = width * 0.75;
+            vert = height;
+        } else {
+            height = size;
+            width = height * sqrt3_2;
+            vert = height * 0.75;
+            horiz = width;
+        }
+
+        return {
+            size,
+            width,
+            height,
+            horiz,
+            vert
+        };
     }
 }
