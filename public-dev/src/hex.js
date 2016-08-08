@@ -120,11 +120,11 @@ export default class Hex {
         let text = hex.label;
         if (text) {
             let px = 20;
-            ctx.fillStyle = '#eee';
+            ctx.fillStyle = hex.color || '#eee';
             ctx.font = px + 'px serif';
-            px = (px * 0.60 * size.size / ctx.measureText(text).width);
+            px = (px * 0.66 * size.size / ctx.measureText(text).width);
             ctx.font = px + 'px serif';
-            ctx.fillText(text, hexCenter.x - ctx.measureText(text).width / 2, hexCenter.y + 5); 
+            ctx.fillText(text, hexCenter.x - ctx.measureText(text).width / 2, hexCenter.y + px * 0.25); 
         }
     }
 

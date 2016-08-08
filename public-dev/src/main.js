@@ -1,5 +1,6 @@
 import reducer from './reducer';
 import { createStore } from 'redux';
+import Hex from './hex';
 
 let store = createStore(reducer);
 
@@ -33,16 +34,14 @@ function render() {
 	state.canvas.render();
 
 	state.map.render(state.center, state.hexDimensions, state.canvas.ctx);
-	if(state.touching) {
-		let fillStyle = state.touching.fillStyle;
-		let label = state.touching.label;
-		
-		state.touching.label = state.touching.coords();
-		state.touching.fillStyle = 'rgba(255,0,0,0.25)';
-		state.touching.render(state.center, state.hexDimensions, state.canvas.ctx);
-		
-		state.touching.label = label;
-		state.touching.fillStyle = fillStyle;
+	if (state.hoverHex) {
+		let hoverHex = new Hex(state.hoverHex);
+		hoverHex.label = state.hoverHex.label;
+		hoverHex.fillStyle = 'rgba(255,0,0,0.25)';
+		if (state.hoverHex.type === 'grass' && state.hoverHex.distance(state.selectedHex) == 1) {
+			hoverHex.fillStyle = 'rgba(0,255,0,0.25)';
+		}
+		hoverHex.render(state.center, state.hexDimensions, state.canvas.ctx);
 	}
 }
 

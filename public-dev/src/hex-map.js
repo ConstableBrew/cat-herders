@@ -32,6 +32,27 @@ export default class HexMap {
         return HexMap.forEach(this, func);
     }
 
+    /**
+     * Returns all neighboring hexes to the given hex out to the given distance.
+     **/
+    static neighborhood(hexMap, hex, distance = 1) {
+        if (!hexMap instanceof HexMap) return [];
+        if (!hex instanceof Hex) return [];
+        let neighbors = [];
+
+        for (let dq = -distance; dq <= distance; ++dq) {
+            for (let dr = -distance; dr <= distance; ++dr) {
+                let neighborHex = hexMap[Hex.coords(hex.q + dq, hex.r + dr)];
+                neighborHex && neighbors.push(neighborHex);
+            }
+        }
+        return neighbors;
+    }
+
+    neighborhood(hex, distance) {
+        return HexMap.neighborhood(this, hex, distance);
+    }
+
     static render(hexMap, center, size, ctx) {
         hexMap.forEach( hex => {
             hex.render(center, size, ctx);
