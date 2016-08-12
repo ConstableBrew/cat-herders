@@ -5,10 +5,11 @@ const sqrt3 = 1.7320508075688772;
 const sqrt3_2 = sqrt3/2;
 
 export default class Hex {
-    constructor(q = 0, r = 0) {
-        if (q instanceof Hex) return new Hex(q.q, q.r); // Clone a given hex
+    constructor(q = 0, r = 0, hexMap = null) {
         this.q = q;
         this.r = r;
+        this.hexMap = hexMap;
+        this.strokeStyle = '#aaa';
     }
 
     /**
@@ -43,6 +44,8 @@ export default class Hex {
         hex = hex instanceof Object ? hex : {};
 
         let dir = Hex.direction(direction);
+        if (hex.hexMap)
+            return hex.hexMap[Hex.coords((hex.q | 0) + dir.q, (hex.r | 0) + dir.r)]
         return new Hex((hex.q | 0) + dir.q, (hex.r | 0) + dir.r);
     }
 
@@ -54,7 +57,7 @@ export default class Hex {
      * Returns coordinates of all neighboring hexes out to the given distance.
      **/
     static neighborhood(hex, distance) {
-        hex = hex instanceof Object ? hex : {};
+        hex = hex instanceof Hex ? hex : {};
         let q = hex.q | 0;
         let r = hex.r | 0;
         let d = distance | 0;
@@ -62,7 +65,16 @@ export default class Hex {
 
         for (let dq = -d; dq <= d; ++dq) {
             for (let dr = -d; dr <= d; ++dr) {
-                neighbors.push(new Hex(q + dq, r + dr))
+                let coords = Hex.coords(q + dq, r + dr);
+                if (coords !== hex.coords()) {
+                    if (hex.hexMap) {
+                        let neighbor = hex.hexMap[coords];
+                        if (neighbor)
+                            neighbors.push(neighbor)
+                    } else {
+                        neighbors.push(new Hex(q + dq, r + dr))
+                    }
+                }
             }
         }
         return neighbors;
@@ -104,8 +116,8 @@ export default class Hex {
         let hexCenter = new Point(mapCenter.x + hex.q * size.horiz , mapCenter.y + hex.r * size.vert + size.vert/2 * hex.q);
         let p = Hex.corner(hexCenter, size.size, 0);
         ctx.beginPath();
-        ctx.fillStyle = hex.fillStyle || 'rgba(255,0,0,0.25)';
-        ctx.strokeStyle = hex.strokeStyle || 'rgba(255,0,0,0.5)';
+        ctx.fillStyle = hex.fillStyle || '#888';
+        ctx.strokeStyle = hex.strokeStyle || '#888';
         ctx.lineWidth = hex.lineWidth || 0.025 * size.size;
         ctx.moveTo(p.x, p.y);
         for (let i = 1; i < 6; ++i) {

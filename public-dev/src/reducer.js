@@ -2,30 +2,19 @@ import Hex from './hex';
 import HexMap from './hex-map';
 import Canvas from './canvas';
 import Point from './point';
+import {Token, Cat, Player, Player1, Player2} from './tokens';
+import {Field, Grass} from './ground';
+
 
 export default function reducer(state = {}, action) {
 	switch (action.type) {
 		case 'init':
 			let canvas = new Canvas();
-			let centerHex = new Hex();
-			let map = new HexMap(action.mapSize);
-			map.forEach( hex => {
-				if(hex.distance(centerHex) === action.mapSize) {
-					hex.strokeStyle = '#aaa';
-					hex.fillStyle = '#784315';
-					hex.type = 'wall';
-				} else {
-					hex.strokeStyle = '#aaa';
-					hex.fillStyle = '#6c9023';
-					hex.type = 'grass';
-				}
-			})
-
-			state.mapSize = action.mapSize;
+			let map = new HexMap(action.radius);
 			state.map = map;
 			state.canvas = canvas;
-			resize(state);
 			initGame(state);
+			resize(state);
 			return state;
 
 		case 'resize':
@@ -38,10 +27,9 @@ export default function reducer(state = {}, action) {
 			}
 			return state;
 		case 'touchstart':
-			console.log('down', state.selectedHex);
 			if (!state.selectedHex) {
 				let touchedHex = state.map.pixelToHex(state.center, state.pxPerHex, action.x, action.y);
-				if (touchedHex && touchedHex.type === state.turnStates[state.turn % 4]) {
+				if (touchedHex && touchedHex.mayMove) {
 					state.selectedHex = touchedHex;
 					state.hoverHex = touchedHex;
 				} else {
@@ -52,36 +40,22 @@ export default function reducer(state = {}, action) {
 			}
 			return state;
 		case 'touchend':
-			console.log('up', state.selectedHex);
 			if (state.selectedHex && (performance.now() - (state.t || 0) ) > 150) {
 				let dropHex = state.map.pixelToHex(state.center, state.pxPerHex, action.x, action.y);
-				if (dropHex.type === 'grass' && dropHex.distance(state.selectedHex) == 1) {
-					let tempHex = {...dropHex};
-					dropHex.type = state.selectedHex.type;
-					dropHex.label = state.selectedHex.label;
-					dropHex.color = state.selectedHex.color;
-					state.selectedHex.type = tempHex.type;
-					state.selectedHex.label = tempHex.label;
-					state.selectedHex.color = tempHex.color;
-					state.selectedHex.turn = state.turn;
-
-					if (state.turnStates[state.turn % 4] !== 'cat') {
-						state.turn++;
-						state.movedHex = dropHex;
+				if (state.selectedHex.validMove(dropHex)) {
+					state.selectedHex.moveTo(dropHex);
+					state.selectedHex.mayMove = false;
+					if (state.selectedHex instanceof Player) {
+						state.movedPlayerToken = state.selectedHex;
+						initCatTurn(state);
+					} else if (state.selectedHex instanceof Cat && state.cats.every(cat => !cat.mayMove)) {
+						captureCats(state);
 					}
-
-					state.selectedHex = null;
-					state.hoverHex = null;
-
-					let mustMoveCats = state.map.neighborhood(state.movedHex, 1).filter( hex => hex && hex.type === 'cat' && hex.turn !== state.turn && (hex.mustMove = state.turn));
-					if (!mustMoveCats)
-						state.turn++;
-					console.log(state.turnStates[state.turn % 4], state.movedHex, mustMoveCats);
-				} else {
-					state.selectedHex = null;
-					state.hoverHex = null;
 				}
+				state.selectedHex = null;
+				state.hoverHex = null;
 			}
+			return state;
 
 		default:
 			return state;
@@ -96,18 +70,19 @@ function resize(state) {
 	state.canvas.cvs.width = window.innerWidth;
 	state.canvas.cvs.height = window.innerHeight;
 	state.center = new Point(state.canvas.cvs.width / 2, state.canvas.cvs.height / 2);
-	state.pxPerHex = Math.min(state.canvas.cvs.width, state.canvas.cvs.height) / state.mapSize / 2;
+	state.pxPerHex = Math.min(state.canvas.cvs.width, state.canvas.cvs.height) / state.map.radius / 2;
 	state.hexDimensions = Hex.getDimensions(state.pxPerHex);
 }
 
 function initGame(state) {
-	state.turn = 0;
-	state.turnStates = ['playerA', 'cat', 'playerB', 'cat'];
+	state.score = {player1: 0, player2: 0};
+	state.movedPlayerToken = null;
+
+	// Randomize the grass so we can pick starting locations for the cats
 	let grass = [];
 	state.cats = [];
 	state.map.forEach( hex => {
-		if (hex.type === 'grass') {
-			// Randomize the grass
+		if (hex.subtype === 'grass') {
 			let i = ~~(Math.random() * grass.length + 0.5);
 			if (i === grass.length) {
 				grass.push(hex);
@@ -117,31 +92,93 @@ function initGame(state) {
 			}
 		}
 	});
-	state.cats = grass.slice(0, 9);
-	state.cats.forEach( hex => {
-		hex.label = '>^.^<';
-		hex.type = 'cat';
+
+	let startingPos;
+
+	// Setup cats into 9 random grass locations
+	startingPos = grass.slice(0, 9).map(hex => {return {q: hex.q, r: hex.r}});
+	state.cats = initTokens(startingPos, Cat, state);
+
+	// Setup player 1 at 3 corners of the field
+	startingPos = [
+		{q: state.map.radius *  0, r: state.map.radius * -1},
+		{q: state.map.radius *  1, r: state.map.radius *  0},
+		{q: state.map.radius * -1, r: state.map.radius *  1}
+	];
+	state.player1 = initTokens(startingPos, Player1, state);
+
+	// Setup player 2 at the other 3 corners of the field
+	startingPos = [
+		{q: state.map.radius * -1, r: state.map.radius *  0},
+		{q: state.map.radius *  1, r: state.map.radius * -1},
+		{q: state.map.radius *  0, r: state.map.radius *  1}
+	];
+	state.player2 = initTokens(startingPos, Player2, state);
+
+	initTurn('player1', state);
+}
+
+function initTokens(startingPositions, Constructor, state) {
+	return startingPositions.map( coords => {
+		let token = new Constructor(coords.q, coords.r, state.map);
+		state.map[token.coords()] = token;
+		return token;
 	});
-	state.playerA = [];
-	[[0,-1],[1,0],[-1,1]].forEach( startingPos => {
-		let q = startingPos[0] * state.mapSize;
-		let r = startingPos[1] * state.mapSize;
-		state.playerA.push(state.map[Hex.coords(q, r)]);
+}
+
+function initTurn(player, state) {
+	let currentPlayer;
+	let otherPlayer
+	if (player === 'player1') {
+		currentPlayer = state.player1;
+		otherPlayer   = state.player2;
+	} else {
+		currentPlayer = state.player2;
+		otherPlayer   = state.player1;
+	}
+
+	currentPlayer.forEach(player => player.mayMove = true);
+	otherPlayer.forEach(player => player.mayMove = false);
+	state.cats.forEach(cat => cat.mayMove = false);
+	state.movedPlayerToken = null;
+}
+
+function initCatTurn(state) {
+	state.player1.forEach(player => player.mayMove = false);
+	state.player2.forEach(player => player.mayMove = false);
+	state.cats.forEach(cat => cat.mayMove = false);
+	let neighborhood = state.movedPlayerToken.neighborhood(1);
+	let strayCats = neighborhood.filter(hex => hex.subtype === 'cat');
+    strayCats.forEach(cat => cat.mayMove = true);
+    	
+    // no cats next to the moved player, immediately check for captured cats
+    if (strayCats.length === 0) {
+    	captureCats(state);
+    }
+}
+
+function captureCats(state) {
+	let player = state.movedPlayerToken.subtype;
+	let capturedCats = state.cats.filter(cat => {
+		let catchers = cat.neighborhood(1).filter(hex => hex.subtype === player);
+		return catchers.length >= 2;
 	});
-	state.playerB = [];
-	[[-1,0],[1,-1],[0,1]].forEach( startingPos => {
-		let q = startingPos[0] * state.mapSize;
-		let r = startingPos[1] * state.mapSize;
-		state.playerB.push(state.map[Hex.coords(q, r)]);
+	capturedCats.forEach(cat => {
+		let i = state.cats.indexOf(cat);
+		~i && state.cats.splice(i,1);
+		state.map.unoccupy(cat.q, cat.r);
+		console.log('Captured', cat.q, cat.r);
 	});
-	state.playerA.forEach( hex => {
-		hex.label = '(ツ)';
-		hex.color = '#d00';
-		hex.type = 'playerA';
-	});
-	state.playerB.forEach( hex => {
-		hex.label = '(◔̯◔)';
-		hex.color = '#00d';
-		hex.type = 'playerB';
-	});
+	state.score[player] += capturedCats.length;
+	togglePlayerTurn(state);
+}
+
+function togglePlayerTurn(state) {
+	let player = state.movedPlayerToken.subtype;
+	if (player === 'player1') {
+		player = 'player2';
+	} else {
+		player = 'player1';
+	}
+	initTurn(player, state)
 }

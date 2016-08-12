@@ -1,5 +1,5 @@
 import Hex from './hex';
-import Point from './point';
+import {Grass, Fence} from './ground';
 
 const sqrt3 = 1.7320508075688772;
 const sqrt3_2 = sqrt3/2;
@@ -8,14 +8,20 @@ const sqrt3_3 = sqrt3/3;
 export default class HexMap {
     constructor(radius) {
         // Build a hex-shaped map filled with Hex objects
-        let counter = 0;
+        this.radius = radius;
         for (let q = -radius; q <= radius; ++q) {
             for (let r = Math.max(-radius, -q - radius); r <= Math.min(radius, -q + radius); ++r) {
-                let hex = new Hex(q, r);
-                this[hex.coords()] = hex;
-                counter++;
+                this.unoccupy(q, r);
             }
         }
+    }
+
+    static validCoordinates(hexMap, q, r) {
+        return hexMap.radius >= Math.abs(q) && hexMap.radius >= Math.abs(r);
+    }
+
+    validCoordinates(q, r) {
+        return HexMap.validCoordinates(this, q, r);
     }
 
     static forEach(hexMap, func) {
@@ -24,12 +30,23 @@ export default class HexMap {
         let hexes = Object.keys(hexMap);
         hexes.forEach( coords => {
             let hex = hexMap[coords];
-            func(hex);
+            if (hex instanceof Hex)
+                func(hex);
         });
     }
 
     forEach(func) {
         return HexMap.forEach(this, func);
+    }
+
+    static toArray(hexMap) {
+        let array = [];
+        hexMap.forEach( hex => array.push(hex));
+        return array;
+    }
+
+    toArray() {
+        return HexMap.toArray(this);
     }
 
     /**
@@ -53,6 +70,18 @@ export default class HexMap {
         return HexMap.neighborhood(this, hex, distance);
     }
 
+    static unoccupy(hexMap, q, r) {
+        let hex = new Grass(q, r);
+        if (hex.distance() === hexMap.radius) {
+            hex = new Fence(q, r);
+        }
+        hexMap[hex.coords()] = hex;
+    }
+
+    unoccupy(q, r) {
+        HexMap.unoccupy(this, q, r);
+    }
+
     static render(hexMap, center, size, ctx) {
         hexMap.forEach( hex => {
             hex.render(center, size, ctx);
@@ -63,16 +92,17 @@ export default class HexMap {
         return HexMap.render(this, center, size, ctx);
     }
 
-    static pixelToHex(center, size, x, y) {
+    static pixelToHex(hexMap, center, size, x, y) {
         size = size / 2;
 
         // Flat top hexes
         let q = (x - center.x) * 0.6666666666666666 / size;
         let r = (-(x - center.x) / 3 + sqrt3_3 * (y - center.y)) / size;
-        return Hex.coords(Math.round(q, 0), Math.round(r, 0));
+        let coords = Hex.coords(Math.round(q, 0), Math.round(r, 0));
+        return hexMap[coords];
     }
 
     pixelToHex(center, size, x, y) {
-        return this[HexMap.pixelToHex(center, size, x, y)];
+        return HexMap.pixelToHex(this, center, size, x, y);
     }
 }
