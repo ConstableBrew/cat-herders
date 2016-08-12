@@ -32,24 +32,17 @@ window.onresize = event => {
 function render() {
 	let state = store.getState();
 	state.canvas.render();
+	renderScore(state);
+	renderMap(state);
+}
 
+function renderMap(state) {
 	state.map.render(state.center, state.hexDimensions, state.canvas.ctx);
+	renderValidHexes(state);
+	renderMouseHover(state);
+}
 
-	if (state.hoverHex) {
-		// Indicate whether or not the hoverHex is a valid drop location
-		let hoverHex = new Hex(state.hoverHex.q, state.hoverHex.r);
-		hoverHex.label = state.hoverHex.label;
-		hoverHex.color = state.hoverHex.color;
-		if (state.selectedHex.validMove(state.hoverHex)) {
-			hoverHex.fillStyle = 'rgba(0,255,0,0.25)';
-			hoverHex.strokeStyle = 'rgba(0,255,0,0.75)';
-		} else {
-			hoverHex.fillStyle = 'rgba(255,0,0,0.25)';
-			hoverHex.strokeStyle = 'rgba(255,0,0,0.75)';
-		}
-		hoverHex.render(state.center, state.hexDimensions, state.canvas.ctx);
-	}
-
+function renderValidHexes(state) {
 	let validHexes;
 	if (state.selectedHex) {
 		validHexes = state.selectedHex.neighborhood(1).filter(hex => state.selectedHex.validMove(hex));
@@ -65,6 +58,49 @@ function render() {
 			highlightHex.render(state.center, state.hexDimensions, state.canvas.ctx);
 		});
 	}
+}
+
+function renderMouseHover(state) {
+	if (state.hoverHex) {
+		// Indicate whether or not the hoverHex is a valid drop location
+		let hoverHex = new Hex(state.hoverHex.q, state.hoverHex.r);
+		hoverHex.label = state.hoverHex.label;
+		hoverHex.color = state.hoverHex.color;
+		if (state.selectedHex.validMove(state.hoverHex)) {
+			hoverHex.fillStyle = 'rgba(0,255,0,0.25)';
+			hoverHex.strokeStyle = 'rgba(0,255,0,0.75)';
+		} else {
+			hoverHex.fillStyle = 'rgba(255,0,0,0.25)';
+			hoverHex.strokeStyle = 'rgba(255,0,0,0.75)';
+		}
+		hoverHex.render(state.center, state.hexDimensions, state.canvas.ctx);
+	}
+}
+
+function renderScore(state) {
+	let ctx = state.canvas.ctx;
+    let px = 20;
+    let text;
+    let textWidth;
+
+	// player 1
+	text = '(ツ)';
+	ctx.fillStyle = '#d00';
+    ctx.font = px + 'px serif';
+    px = (px * state.hexDimensions.width / ctx.measureText(text).width);
+    ctx.font = px + 'px serif';
+    textWidth = ctx.measureText(text).width;
+	ctx.fillText(text, 20, 1.5 * px);
+	ctx.fillText(state.score['player1'], 20 + textWidth + px, 1.5 * px);
+
+	// player 2
+	text = '(◔̯◔)';
+	ctx.fillStyle = '#00d';
+    let px2 = (px * state.hexDimensions.width / ctx.measureText(text).width);
+    ctx.font = px2 + 'px serif';
+	ctx.fillText(text, 20, 3 * px);
+    ctx.font = px + 'px serif';
+	ctx.fillText(state.score['player2'], 20 + textWidth + px, 3 * px);
 }
 
 
