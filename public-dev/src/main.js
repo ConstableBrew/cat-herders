@@ -42,6 +42,7 @@ function render() {
 	state.canvas.render();
 	renderScore(state);
 	renderMap(state);
+	if (!state.cats.length) renderGameOver(state);
 }
 
 function renderMap(state) {
@@ -109,6 +110,39 @@ function renderScore(state) {
 	ctx.fillText(text, 20, 3 * px);
     ctx.font = px + 'px serif';
 	ctx.fillText(state.score['player2'], 20 + textWidth + px, 3 * px);
+}
+
+function renderGameOver(state) {
+	let ctx = state.canvas.ctx;
+	let cvs = state.canvas.cvs;
+    let px = 30;
+    let text;
+    let color;
+
+    if (state.score['player1'] > state.score['player2']) {
+		// player 1
+		text = '(ツ) WINS!';
+		color = '#d00';
+    } else {
+		// player 2
+		text = '(◔̯◔) WINS!';
+		color = '#00d';
+    }
+    ctx.font = px + 'px serif';
+    let textWidth = ctx.measureText(text).width;
+    let offset = cvs.width - textWidth;
+	ctx.fillStyle = '#fff';
+	ctx.fillText(text, offset/2 + 1.5, cvs.height/2 + 1.5);
+	ctx.fillText(text, offset/2 + 1.5, cvs.height/2 + 0);
+	ctx.fillText(text, offset/2 + 1.5, cvs.height/2 - 1.5);
+	ctx.fillText(text, offset/2 + 0, cvs.height/2 + 1.5);
+	ctx.fillText(text, offset/2 + 0, cvs.height/2 - 1.5);
+	ctx.fillText(text, offset/2 - 1.5, cvs.height/2 + 1.5);
+	ctx.fillText(text, offset/2 - 1.5, cvs.height/2 + 0);
+	ctx.fillText(text, offset/2 - 1.5, cvs.height/2 - 1.5);
+
+	ctx.fillStyle = color;
+	ctx.fillText(text, offset/2 + 0, cvs.height/2 + 0);
 }
 
 

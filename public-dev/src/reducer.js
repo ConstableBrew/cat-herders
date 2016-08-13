@@ -9,11 +9,10 @@ import {Field, Grass} from './ground';
 export default function reducer(state = {}, action) {
 	switch (action.type) {
 		case 'init':
-			let canvas = new Canvas();
-			let map = new HexMap(action.radius);
-			state.map = map;
-			state.canvas = canvas;
-			state.spritesheet = new Image();
+			state.radius = action.radius;
+			state.map = new HexMap(state.radius);
+			state.canvas = new Canvas();
+			state.spritesheet = state.spritesheet || new Image();
 			initGame(state);
 			resize(state);
 			return state;
@@ -33,6 +32,13 @@ export default function reducer(state = {}, action) {
 			return state;
 
 		case 'touchstart':
+			if (!state.cats.length) {
+				// Game over, start a new game
+				state.map = new HexMap(state.radius);
+				initGame(state);
+				resize(state);
+				return state;
+			}
 			if (!state.selectedHex) {
 				let touchedHex = state.map.pixelToHex(state.center, state.pxPerHex, action.x, action.y);
 				if (touchedHex && (touchedHex.mayMove || touchedHex.subtype === 'fence')) {
