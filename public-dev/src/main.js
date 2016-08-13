@@ -6,28 +6,36 @@ let store = createStore(reducer);
 
 store.dispatch({type: 'init', radius: 5});
 store.subscribe( () => window.requestAnimationFrame(render));
+setupInputListeners(store);
 
-document.body.addEventListener('mousemove', event => {
-	store.dispatch({type: 'touchmove', x: event.clientX, y: event.clientY});
-});
-document.body.addEventListener('mousedown', event => {
-	store.dispatch({type: 'touchstart', x: event.clientX, y: event.clientY});
-});
-document.body.addEventListener('mouseup', event => {
-	store.dispatch({type: 'touchend', x: event.clientX, y: event.clientY});
-});
-document.body.addEventListener('touchmove', event => {
-	store.dispatch({type: 'touchmove', x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY});
-});
-document.body.addEventListener('touchstart', event => {
-	store.dispatch({type: 'touchstart', x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY});
-});
-document.body.addEventListener('touchend', event => {
-	store.dispatch({type: 'touchend', x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY});
-});
-window.onresize = event => {
-	store.dispatch({type: 'resize'});
-};
+let spritesheet = store.getState().spritesheet;
+spritesheet.src = '/img/cat-herders-pieces.png';
+spritesheet.addEventListener('load', () => store.dispatch({type: 'spritesheet', spritesheet}), false);
+
+function setupInputListeners(store) {
+	let docBody = document.body;
+	docBody.addEventListener('mousemove', event => {
+		store.dispatch({type: 'touchmove', x: event.clientX, y: event.clientY});
+	});
+	docBody.addEventListener('mousedown', event => {
+		store.dispatch({type: 'touchstart', x: event.clientX, y: event.clientY});
+	});
+	docBody.addEventListener('mouseup', event => {
+		store.dispatch({type: 'touchend', x: event.clientX, y: event.clientY});
+	});
+	docBody.addEventListener('touchmove', event => {
+		store.dispatch({type: 'touchmove', x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY});
+	});
+	docBody.addEventListener('touchstart', event => {
+		store.dispatch({type: 'touchstart', x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY});
+	});
+	docBody.addEventListener('touchend', event => {
+		store.dispatch({type: 'touchend', x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY});
+	});
+	window.onresize = event => {
+		store.dispatch({type: 'resize'});
+	};
+}
 
 function render() {
 	let state = store.getState();
@@ -45,7 +53,7 @@ function renderMap(state) {
 function renderValidHexes(state) {
 	let validHexes;
 	if (state.selectedHex) {
-		validHexes = state.selectedHex.neighborhood(1).filter(hex => state.selectedHex.validMove(hex));
+		validHexes = state.selectedHex.neighborhood(2).filter(hex => state.selectedHex.validMove(hex));
 	} else {
 		validHexes = state.map.toArray().filter(hex => hex.mayMove);
 	}

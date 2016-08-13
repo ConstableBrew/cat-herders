@@ -57,22 +57,23 @@ export default class Hex {
      * Returns coordinates of all neighboring hexes out to the given distance.
      **/
     static neighborhood(hex, distance) {
-        hex = hex instanceof Hex ? hex : {};
-        let q = hex.q | 0;
-        let r = hex.r | 0;
-        let d = distance | 0;
+        let q = hex.q;
+        let r = hex.r;
+        let d = distance;
         let neighbors = [];
+        let myCoords = hex.coords();
 
         for (let dq = -d; dq <= d; ++dq) {
             for (let dr = -d; dr <= d; ++dr) {
-                let coords = Hex.coords(q + dq, r + dr);
-                if (coords !== hex.coords()) {
+                let tmpHex = new Hex(q + dq, r + dr);
+                let coords = tmpHex.coords();
+                if (coords !== myCoords && hex.distance(tmpHex) <= distance) {
                     if (hex.hexMap) {
                         let neighbor = hex.hexMap[coords];
                         if (neighbor)
-                            neighbors.push(neighbor)
+                            neighbors.push(neighbor);
                     } else {
-                        neighbors.push(new Hex(q + dq, r + dr))
+                        neighbors.push(tmpHex);
                     }
                 }
             }

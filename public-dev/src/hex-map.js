@@ -71,9 +71,9 @@ export default class HexMap {
     }
 
     static unoccupy(hexMap, q, r) {
-        let hex = new Grass(q, r);
+        let hex = new Grass(q, r, hexMap);
         if (hex.distance() === hexMap.radius) {
-            hex = new Fence(q, r);
+            hex = new Fence(q, r, hexMap);
         }
         hexMap[hex.coords()] = hex;
     }

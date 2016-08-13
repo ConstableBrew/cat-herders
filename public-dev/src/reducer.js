@@ -13,8 +13,13 @@ export default function reducer(state = {}, action) {
 			let map = new HexMap(action.radius);
 			state.map = map;
 			state.canvas = canvas;
+			state.spritesheet = new Image();
 			initGame(state);
 			resize(state);
+			return state;
+
+		case 'spritesheet':
+			state.spritesheet = action.spritesheet;
 			return state;
 
 		case 'resize':
@@ -97,7 +102,13 @@ function initGame(state) {
 
 	// Setup cats into 9 random grass locations
 	startingPos = grass.slice(0, 9).map(hex => {return {q: hex.q, r: hex.r}});
-	state.cats = initTokens(startingPos, Cat, state);
+	state.cats = initTokens(startingPos, Cat, state, {
+		spritesheet: state.spritesheet,
+		sx: 170,
+		sy: 2,
+		sw: 160,
+		sh: 138
+	});
 
 	// Setup player 1 at 3 corners of the field
 	startingPos = [
@@ -105,7 +116,13 @@ function initGame(state) {
 		{q: state.map.radius *  1, r: state.map.radius *  0},
 		{q: state.map.radius * -1, r: state.map.radius *  1}
 	];
-	state.player1 = initTokens(startingPos, Player1, state);
+	state.player1 = initTokens(startingPos, Player1, state, {
+		spritesheet: state.spritesheet,
+		sx: 336,
+		sy: 2,
+		sw: 160,
+		sh: 138
+	});
 
 	// Setup player 2 at the other 3 corners of the field
 	startingPos = [
@@ -113,14 +130,20 @@ function initGame(state) {
 		{q: state.map.radius *  1, r: state.map.radius * -1},
 		{q: state.map.radius *  0, r: state.map.radius *  1}
 	];
-	state.player2 = initTokens(startingPos, Player2, state);
+	state.player2 = initTokens(startingPos, Player2, state, {
+		spritesheet: state.spritesheet,
+		sx: 2,
+		sy: 2,
+		sw: 160,
+		sh: 138
+	});
 
 	initTurn('player1', state);
 }
 
-function initTokens(startingPositions, Constructor, state) {
+function initTokens(startingPositions, Constructor, state, sprite) {
 	return startingPositions.map( coords => {
-		let token = new Constructor(coords.q, coords.r, state.map);
+		let token = new Constructor(coords.q, coords.r, state.map, sprite);
 		state.map[token.coords()] = token;
 		return token;
 	});
@@ -167,7 +190,6 @@ function captureCats(state) {
 		let i = state.cats.indexOf(cat);
 		~i && state.cats.splice(i,1);
 		state.map.unoccupy(cat.q, cat.r);
-		console.log('Captured', cat.q, cat.r);
 	});
 	state.score[player] += capturedCats.length;
 	togglePlayerTurn(state);
