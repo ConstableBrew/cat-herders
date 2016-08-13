@@ -31,12 +31,30 @@ export default function reducer(state = {}, action) {
 				state.hoverHex = state.map.pixelToHex(state.center, state.pxPerHex, action.x, action.y);
 			}
 			return state;
+
 		case 'touchstart':
 			if (!state.selectedHex) {
 				let touchedHex = state.map.pixelToHex(state.center, state.pxPerHex, action.x, action.y);
-				if (touchedHex && touchedHex.mayMove) {
-					state.selectedHex = touchedHex;
-					state.hoverHex = touchedHex;
+				if (touchedHex && (touchedHex.mayMove || touchedHex.subtype === 'fence')) {
+					if (touchedHex.subtype === 'fence') {
+						if(state.currentPlayer && state[state.currentPlayer].length < 15) {
+							let startingPos = [{q: touchedHex.q, r: touchedHex.r}];
+							let token;
+							if (state.currentPlayer === 'player1') {
+								token = initPlayer1Tokens(startingPos, state).pop();
+							} else {
+								token = initPlayer2Tokens(startingPos, state).pop();
+							}
+							state[state.currentPlayer].push(token);
+							state.movedPlayerToken = state.selectedHex = token;
+							initCatTurn(state);
+							state.selectedHex = null;
+							state.hoverHex = null;
+						}
+					} else {
+						state.selectedHex = touchedHex;
+						state.hoverHex = touchedHex;
+					}
 				} else {
 					state.selectedHex = null;
 					state.hoverHex = null;
@@ -44,6 +62,7 @@ export default function reducer(state = {}, action) {
 				state.t = performance.now();
 			}
 			return state;
+
 		case 'touchend':
 			if (state.selectedHex && (performance.now() - (state.t || 0) ) > 150) {
 				let dropHex = state.map.pixelToHex(state.center, state.pxPerHex, action.x, action.y);
@@ -101,7 +120,7 @@ function initGame(state) {
 	let startingPos;
 
 	// Setup cats into 9 random grass locations
-	startingPos = grass.slice(0, 9).map(hex => {return {q: hex.q, r: hex.r}});
+	startingPos = grass.splice(0, 9).map(hex => {return {q: hex.q, r: hex.r}});
 	state.cats = initTokens(startingPos, Cat, state, {
 		spritesheet: state.spritesheet,
 		sx: 170,
@@ -116,13 +135,7 @@ function initGame(state) {
 		{q: state.map.radius *  1, r: state.map.radius *  0},
 		{q: state.map.radius * -1, r: state.map.radius *  1}
 	];
-	state.player1 = initTokens(startingPos, Player1, state, {
-		spritesheet: state.spritesheet,
-		sx: 336,
-		sy: 2,
-		sw: 160,
-		sh: 138
-	});
+	state.player1 = initPlayer1Tokens(startingPos, state);
 
 	// Setup player 2 at the other 3 corners of the field
 	startingPos = [
@@ -130,15 +143,29 @@ function initGame(state) {
 		{q: state.map.radius *  1, r: state.map.radius * -1},
 		{q: state.map.radius *  0, r: state.map.radius *  1}
 	];
-	state.player2 = initTokens(startingPos, Player2, state, {
+	state.player2 = initPlayer2Tokens(startingPos, state);
+
+	initPlayerTurn('player1', state);
+}
+
+function initPlayer1Tokens(startingPos, state) {
+	return initTokens(startingPos, Player1, state, {
+		spritesheet: state.spritesheet,
+		sx: 336,
+		sy: 2,
+		sw: 160,
+		sh: 138
+	});
+}
+
+function initPlayer2Tokens(startingPos, state) {
+	return initTokens(startingPos, Player2, state, {
 		spritesheet: state.spritesheet,
 		sx: 2,
 		sy: 2,
 		sw: 160,
 		sh: 138
 	});
-
-	initTurn('player1', state);
 }
 
 function initTokens(startingPositions, Constructor, state, sprite) {
@@ -149,7 +176,7 @@ function initTokens(startingPositions, Constructor, state, sprite) {
 	});
 }
 
-function initTurn(player, state) {
+function initPlayerTurn(player, state) {
 	let currentPlayer;
 	let otherPlayer
 	if (player === 'player1') {
@@ -164,12 +191,14 @@ function initTurn(player, state) {
 	otherPlayer.forEach(player => player.mayMove = false);
 	state.cats.forEach(cat => cat.mayMove = false);
 	state.movedPlayerToken = null;
+	state.currentPlayer = player;
 }
 
 function initCatTurn(state) {
 	state.player1.forEach(player => player.mayMove = false);
 	state.player2.forEach(player => player.mayMove = false);
 	state.cats.forEach(cat => cat.mayMove = false);
+	state.currentPlayer = null;
 	let neighborhood = state.movedPlayerToken.neighborhood(1);
 	let strayCats = neighborhood.filter(hex => hex.subtype === 'cat');
     strayCats.forEach(cat => cat.mayMove = true);
@@ -202,5 +231,5 @@ function togglePlayerTurn(state) {
 	} else {
 		player = 'player1';
 	}
-	initTurn(player, state)
+	initPlayerTurn(player, state)
 }
