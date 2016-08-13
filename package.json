@@ -5,10 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha",
-    "build": "browserify public-dev/src/main.js -o public-dev/src/bundle.js -t [ babelify --presets [ es2015 stage-1 ] ]",
+    "build": "browserify public-dev/main.js -o public-dev/bundle.js -t [ babelify --presets [ es2015 stage-1 ] ]",
     "watch": "npm run watch-node & npm run watch-js",
     "watch-node": "nodemon index.js",
-    "watch-js": "watchify public-dev/src/main.js -o public-dev/src/bundle.js -t [ babelify --presets [ es2015 stage-1 ] ]"
+    "watch-js": "watchify public-dev/main.js -o public-dev/bundle.js -t [ babelify --presets [ es2015 stage-1 ] ]"
   },
   "babel": {
     "presets": [

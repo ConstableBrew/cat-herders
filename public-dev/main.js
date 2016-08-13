@@ -9,7 +9,7 @@ store.subscribe( () => window.requestAnimationFrame(render));
 setupInputListeners(store);
 
 let spritesheet = store.getState().spritesheet;
-spritesheet.src = '/img/cat-herders-pieces.png';
+spritesheet.src = 'cat-herders-pieces.png';
 spritesheet.addEventListener('load', () => store.dispatch({type: 'spritesheet', spritesheet}), false);
 
 function setupInputListeners(store) {
@@ -35,6 +35,13 @@ function setupInputListeners(store) {
 	window.onresize = event => {
 		store.dispatch({type: 'resize'});
 	};
+	document.getElementById('instructions').addEventListener('click', hideInstructions);
+	document.getElementById('backdrop').addEventListener('click', hideInstructions);
+}
+
+function hideInstructions (){
+	document.getElementById('instructions').style.display = 'none';
+	document.getElementById('backdrop').style.display = 'none';
 }
 
 function render() {
