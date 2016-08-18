@@ -4,11 +4,16 @@
   "description": "Cat Herders: The cat herding game of herding cats",
   "main": "index.js",
   "scripts": {
-    "test": "mocha",
-    "build": "browserify public-dev/main.js -o public-dev/bundle.js -t [ babelify --presets [ es2015 stage-1 ] ]",
-    "watch": "npm run watch-node & npm run watch-js",
-    "watch-node": "nodemon index.js",
-    "watch-js": "watchify public-dev/main.js -o public-dev/bundle.js -t [ babelify --presets [ es2015 stage-1 ] ]"
+    "build": "npm run build-js & npm run build-html & npm run build-img",
+    "build-js": "browserify src/js/index.js -o dist/js/bundle.js -t [ babelify --presets [ es2015 stage-1 ] ] -d -p [minifyify --no-map]",
+    "build-html": "find ./src -name \\*.html -exec cp {} dist \\;",
+    "build-img": "find ./src/img -name \\*.* -exec cp {} dist/img \\;",
+    "start": "node index.js",
+    "watch": "npm run watch-node & npm run watch-js & npm run watch-html & npm run watch-img",
+    "watch-node": "nodemon --ignore dist/ --ignore src/",
+    "watch-js": "watchify src/js/index.js -o dist/js/bundle.js -t [ babelify --presets [ es2015 stage-1 ] ] -d",
+    "watch-html": "onchange 'src/*.html' -i -v -- npm run build-html",
+    "watch-img": "onchange 'src/img/*.*' -i -v -- npm run build-img"
   },
   "babel": {
     "presets": [
@@ -30,7 +35,7 @@
     "strategy"
   ],
   "author": "Michael Brewer <constablebrew@gmail.com>",
-  "license": "ISC",
+  "license": "CATHERDING",
   "bugs": {
     "url": "https://github.com/ConstableBrew/cat-herders/issues"
   },
@@ -40,8 +45,9 @@
     "babel-preset-es2015": "^6.9.0",
     "babel-preset-stage-1": "^6.5.0",
     "babelify": "^7.3.0",
-    "chai": "^3.5.0",
-    "mocha": "^3.0.0"
+    "browserify": "^13.1.0",
+    "minifyify": "^7.3.3",
+    "onchange": "^2.5.0"
   },
   "dependencies": {
     "finalhandler": "^0.5.0",

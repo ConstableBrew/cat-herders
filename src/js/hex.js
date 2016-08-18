@@ -36,6 +36,24 @@ export default class Hex {
         let dir = (direction | 0) % 6;
         return directions[dir];
     }
+
+    static isDirection(q, r) {
+        let directions = {
+            '-1': {
+               '0': true,
+               '1': true 
+            },
+            '0': {
+                '-1': true,
+                '1': true
+            },
+            '1': {
+                '-1': true,
+                '0': true
+            }
+        };
+        return directions[q] && directions[q][r];
+    }
     
     /**
      * Returns the neighboring (adjacent) hex in the given direction

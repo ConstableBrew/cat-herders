@@ -65,7 +65,19 @@ export class Player extends Token {
 			coords = Hex.coords(q, r);
 		}
 		let destination = this.hexMap[coords];
-		return destination && destination.type === 'unoccupied' && destination.distance(this) <= 2;
+		let dq = null;
+		let dr = null;
+		if (destination) {
+			dq = destination.q - this.q;
+			dr = destination.r - this.r;
+			let dQ = Math.abs(dq);
+			let dR = Math.abs(dr);
+			let d = Math.max(dQ, dR);
+			d && (dq /= d);
+			d && (dr /= d);
+			console.log(`(${destination.q},${destination.r})`, `(${dQ},${dR})`, `(${dq},${dr})`);
+		}
+		return destination && Hex.isDirection(dq, dr) && destination.type === 'unoccupied' && destination.distance(this) <= 2;
 	}
 }
 

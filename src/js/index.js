@@ -9,7 +9,7 @@ store.subscribe( () => window.requestAnimationFrame(render));
 setupInputListeners(store);
 
 let spritesheet = store.getState().spritesheet;
-spritesheet.src = 'cat-herders-pieces.png';
+spritesheet.src = '../img/cat-herders-pieces.png';
 spritesheet.addEventListener('load', () => store.dispatch({type: 'spritesheet', spritesheet}), false);
 
 function setupInputListeners(store) {
@@ -49,7 +49,7 @@ function render() {
 	state.canvas.render();
 	renderScore(state);
 	renderMap(state);
-	if (!state.cats.length) renderGameOver(state);
+	if (state.score['player1'] === 5 || state.score['player2'] === 5) renderGameOver(state);
 }
 
 function renderMap(state) {
@@ -80,7 +80,6 @@ function renderMouseHover(state) {
 	if (state.hoverHex) {
 		// Indicate whether or not the hoverHex is a valid drop location
 		let hoverHex = new Hex(state.hoverHex.q, state.hoverHex.r);
-		hoverHex.label = state.hoverHex.label;
 		hoverHex.color = state.hoverHex.color;
 		if (state.selectedHex.validMove(state.hoverHex)) {
 			hoverHex.fillStyle = 'rgba(0,255,0,0.25)';
