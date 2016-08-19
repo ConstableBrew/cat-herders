@@ -9,7 +9,7 @@ store.subscribe( () => window.requestAnimationFrame(render));
 setupInputListeners(store);
 
 let spritesheet = store.getState().spritesheet;
-spritesheet.src = '../img/cat-herders-pieces.png';
+spritesheet.src = './img/cat-herders-pieces.png';
 spritesheet.addEventListener('load', () => store.dispatch({type: 'spritesheet', spritesheet}), false);
 
 function setupInputListeners(store) {
