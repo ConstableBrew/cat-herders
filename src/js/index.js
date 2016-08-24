@@ -1,6 +1,7 @@
 import reducer from './reducer';
 import { createStore } from 'redux';
 import Hex from './hex';
+import io from 'socket.io/lib/client';
 
 let store = createStore(reducer);
 

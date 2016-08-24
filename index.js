@@ -1,21 +1,15 @@
-var port = process.env.PORT || 3000;
-var http = require('http');
-var url  = require('url');
+var port = process.env.PORT || 8000;
+var express = require('express');
+var app = express();
+var http = require('http').Server(app);
+var io = require('socket.io')(http)
 
-var finalhandler = require('finalhandler');
-var serveStatic = require('serve-static')('./dist');
+app.use(express.static('./dist'));
 
-var server = http.createServer(function(req, res) {
-	console.info(req.url);
+io.on('connection', socket => {
+    
+});
 
-	var done = finalhandler(req, res);
-	var urlParts = url.parse(req.url);
-
-	switch (urlParts.path) {
-		default:
-			serveStatic(req, res, done);
-	}
-})
-.listen(port);
-
-console.info('listening on port', port);
+http.listen(port, function(){
+  console.log(`listening on *:${port}`);
+});
